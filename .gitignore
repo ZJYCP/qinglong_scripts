@@ -25,5 +25,9 @@
 # Miscellaneous
 .DS_Store
 
-# 配置
+# 用户配置
 /config/config.yaml
+
+# 通知
+notify.py
+sendNotify.js

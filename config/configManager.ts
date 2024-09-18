@@ -1,7 +1,6 @@
-// import * as yaml from 'js-yaml';
-// import * as fs from 'fs';
 const yaml = require('js-yaml');
 const fs = require('fs');
+const path = require('path');
 
 class ConfigManager {
   private static instance: ConfigManager;
@@ -9,7 +8,7 @@ class ConfigManager {
 
   private constructor(config_name?: string) {
     if(config_name){
-      const config_path = `./config/${config_name}`;
+      const config_path = path.resolve(__dirname, 'config.yaml');
       this.loadConfig(config_path);
     }else{
       this.config = null;
