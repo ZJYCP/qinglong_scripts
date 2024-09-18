@@ -1,15 +1,13 @@
-
 /**
  * 星芽短剧
  * 该脚本仅供学习交流使用，严禁用于商业用途，如有侵权，请联系删除
  * 作者：Glyn
  * 近期修订历史
  * 2024-09-18 first release
- * 
+ *
  * cron: 0 0 6,12,18 * * *
  * const $ = new Env('星芽短剧');
  */
-
 
 const axios = require("axios");
 const { randomInt } = require("crypto");
@@ -22,7 +20,7 @@ interface Task {
 }
 
 interface UserConfig {
-  name: string,
+  name: string;
   authorization: string;
   device_id: string;
 }
@@ -35,29 +33,31 @@ class XingYaShortPlay {
     this.config = config;
     this.headers = {
       "x-app-id": "7",
-      "authorization": config.authorization,
-      "platform": "1",
-      "manufacturer": "vivo",
-      "version_name": "3.5.0.2",
-      "user_agent": "Mozilla/5.0 (Linux; Android 14; V2309A Build/UP1A.231005.007; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/128.0.6613.127 Mobile Safari/537.36",
-      "dev_token": "BKstHSUfkySF6lTw52xLS1Mw7S0XgZJosDGGL6nNPLUCZMWHutdKO8gL7s_dhpOHx2v5ZOYGhIHcFAnG4FAZfkLuzyAOMisSeO2H8VVP35E6cxaKsutbdpiPW77uL5p-_TyYdHbruLohtE_PIZNaTxXZIiUf4jWx_MVy61wsWIaA*",
-      "app_version": "3.5.0.2",
-      "device_platform": "android",
-      "personalized_recommend_status": "1",
-      "device_type": "V2309A",
-      "device_brand": "vivo",
-      "os_version": "14",
-      "channel": "default",
-      "raw_channel": "default",
-      "oaid": "e841529c4a5fbeedc1f8770b2c13e685af59172f72e25351d589fbd43781015e",
-      "msa_oaid": "e841529c4a5fbeedc1f8770b2c13e685af59172f72e25351d589fbd43781015e",
-      "uuid": "randomUUID_0101de9a-9021-4252-8b3d-7c960cc5092f",
-      "device_id":  config.device_id,
-      "ab_id": "",
-      "support_h265": "1",
+      authorization: config.authorization,
+      platform: "1",
+      manufacturer: "vivo",
+      version_name: "3.5.0.2",
+      user_agent:
+        "Mozilla/5.0 (Linux; Android 14; V2309A Build/UP1A.231005.007; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/128.0.6613.127 Mobile Safari/537.36",
+      dev_token:
+        "BKstHSUfkySF6lTw52xLS1Mw7S0XgZJosDGGL6nNPLUCZMWHutdKO8gL7s_dhpOHx2v5ZOYGhIHcFAnG4FAZfkLuzyAOMisSeO2H8VVP35E6cxaKsutbdpiPW77uL5p-_TyYdHbruLohtE_PIZNaTxXZIiUf4jWx_MVy61wsWIaA*",
+      app_version: "3.5.0.2",
+      device_platform: "android",
+      personalized_recommend_status: "1",
+      device_type: "V2309A",
+      device_brand: "vivo",
+      os_version: "14",
+      channel: "default",
+      raw_channel: "default",
+      oaid: "e841529c4a5fbeedc1f8770b2c13e685af59172f72e25351d589fbd43781015e",
+      msa_oaid:
+        "e841529c4a5fbeedc1f8770b2c13e685af59172f72e25351d589fbd43781015e",
+      uuid: "randomUUID_0101de9a-9021-4252-8b3d-7c960cc5092f",
+      device_id: config.device_id,
+      ab_id: "",
+      support_h265: "1",
       "accept-encoding": "gzip",
-      "user-agent": "okhttp/4.10.0"
-      
+      "user-agent": "okhttp/4.10.0",
     };
   }
 
@@ -233,8 +233,7 @@ class XingYaShortPlay {
 
   private async checkTasks() {
     console.log("📊查看任务列表");
-    const url =
-      `https://speciesweb.whjzjx.cn/v1/task/list?device_id=${this.config.device_id}`;
+    const url = `https://speciesweb.whjzjx.cn/v1/task/list?device_id=${this.config.device_id}`;
     const data = await this.request(url, "GET");
     if (!data) return;
 
@@ -303,20 +302,20 @@ async function runMultipleAccounts(configs: UserConfig[]) {
     console.log(`账号 ${configs[i].name} 执行完毕\n`);
     // 在账号之间添加一些延迟，避免请求过于频繁
     if (i < configs.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   }
 }
 
-
-const configs: UserConfig[] = Object.entries(configManager.get("videos.xydj") as Record<string, Partial<UserConfig>> ?? []).map(([name, config])=>{
+const configs: UserConfig[] = Object.entries(
+  (configManager.get("videos.xydj") as Record<string, Partial<UserConfig>>) ??
+    []
+).map(([name, config]) => {
   return {
     name: name,
     authorization: config.authorization,
-    device_id: config.device_id
-  } as UserConfig
-})
-
+    device_id: config.device_id,
+  } as UserConfig;
+});
 
 runMultipleAccounts(configs).catch(console.error);
-
