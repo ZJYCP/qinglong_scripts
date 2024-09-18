@@ -87,13 +87,20 @@ class BawangChajiSignIn {
     this.headers["qm-user-token"] = ck;
 
     try {
-      const { data } = await axios.get<{ message: string; data: UserInfo }>(
-        "https://webapi.qmai.cn/web/catering/crm/personal-info",
-        { headers: this.headers }
-      );
+      // const { data } = await axios.get<{ message: string; data: UserInfo }>(
+      //   "https://webapi.qmai.cn/web/catering/crm/personal-info",
+      //   { headers: this.headers }
+      // );
 
-      if (data.message === "ok") {
-        this.myprint(`账号：${data.data.mobilePhone}登录成功`);
+      const url = "https://webapi.qmai.cn/web/catering/crm/personal-info";
+
+      const login_info = await request<{
+        message: string;
+        data: UserInfo;
+      }>(url, this.headers, "GET");
+
+      if (login_info.message === "ok") {
+        this.myprint(`账号：${login_info.data.mobilePhone}登录成功`);
 
         const timestamp = Date.now().toString();
         const signature = this.generateHash(
@@ -109,20 +116,26 @@ class BawangChajiSignIn {
           storeId: 49006,
         };
 
-        const signInResponse = await axios.post<{
+        // const signInResponse = await axios.post<{
+        //   message: string;
+        //   data: SignInResult;
+        // }>(postData, { headers: this.headers });
+
+        const checkin_info = await request<{
           message: string;
           data: SignInResult;
         }>(
           "https://webapi.qmai.cn/web/cmk-center/sign/takePartInSign",
-          postData,
-          { headers: this.headers }
+          this.headers,
+          "POST",
+          postData
         );
 
-        if (signInResponse.data.message === "ok") {
-          const reward = signInResponse.data.data.rewardDetailList[0];
+        if (checkin_info.message === "ok") {
+          const reward = checkin_info.data.rewardDetailList[0];
           this.myprint(`签到情况：获得${reward.rewardName}：${reward.sendNum}`);
         } else {
-          this.myprint(`签到情况：${signInResponse.data.message}`);
+          this.myprint(`签到情况：${checkin_info.message}`);
         }
       } else {
         this.myprint("太久不打开小程序存在错误");
