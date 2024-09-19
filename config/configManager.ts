@@ -8,7 +8,7 @@ class ConfigManager {
 
   private constructor(config_name?: string) {
     if(config_name){
-      const config_path = path.resolve(__dirname, 'config.yaml');
+      const config_path = path.resolve(__dirname, config_name);
       this.loadConfig(config_path);
     }else{
       this.config = null;
@@ -65,5 +65,6 @@ class ConfigManager {
 
 // 导出单例
 const configManagerInstance = ConfigManager.getInstance("config.yaml");
-module.exports = configManagerInstance;
+
+export default configManagerInstance
 
