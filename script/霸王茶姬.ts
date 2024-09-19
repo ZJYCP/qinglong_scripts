@@ -2,15 +2,17 @@
  * 霸王茶姬 签到脚本 v1.0.240918
  * 作者：Glyn
  * 签到一个月兑换买一送一券
- * cron: 0 0 6,12,18 * * *
+ * cron: 0 0 6,18 * * *
  * const $ = new Env('霸王茶姬');
  * 该脚本仅供学习交流使用，严禁用于商业用途，如有侵权，请联系删除
  */
 
-const axios = require("axios");
-const crypto = require("crypto");
-
+import * as crypto from "crypto"
+import configManager from "../config/configManager"
+import { request } from "../utils/request";
+import { convertConfig } from "../utils/tools"
 interface UserConfig {
+  name: string
   cookie: string;
   uid: string;
 }
@@ -76,8 +78,8 @@ class BawangChajiSignIn {
 
   private async sendNotificationMessage(title: string): Promise<void> {
     try {
-      const { send } = await import("./sendNotify");
-      await send(title, this.allPrintList.join("\n"));
+      const { sendMessage } = await import("../utils/tools");
+      await sendMessage(title, this.allPrintList.join("\n"));
     } catch (error) {
       console.error("发送通知消息失败！", error);
     }
@@ -87,17 +89,16 @@ class BawangChajiSignIn {
     this.headers["qm-user-token"] = ck;
 
     try {
-      // const { data } = await axios.get<{ message: string; data: UserInfo }>(
-      //   "https://webapi.qmai.cn/web/catering/crm/personal-info",
-      //   { headers: this.headers }
-      // );
-
       const url = "https://webapi.qmai.cn/web/catering/crm/personal-info";
 
       const login_info = await request<{
         message: string;
         data: UserInfo;
       }>(url, this.headers, "GET");
+      if(!login_info){
+        this.myprint("登入验证失败");
+        return
+      }
 
       if (login_info.message === "ok") {
         this.myprint(`账号：${login_info.data.mobilePhone}登录成功`);
@@ -116,11 +117,6 @@ class BawangChajiSignIn {
           storeId: 49006,
         };
 
-        // const signInResponse = await axios.post<{
-        //   message: string;
-        //   data: SignInResult;
-        // }>(postData, { headers: this.headers });
-
         const checkin_info = await request<{
           message: string;
           data: SignInResult;
@@ -130,6 +126,10 @@ class BawangChajiSignIn {
           "POST",
           postData
         );
+        if(!checkin_info){
+          this.myprint("签到失败");
+          return
+        }
 
         if (checkin_info.message === "ok") {
           const reward = checkin_info.data.rewardDetailList[0];
@@ -160,7 +160,7 @@ class BawangChajiSignIn {
       }
     }
 
-    // await this.sendNotificationMessage("霸王茶姬");
+    await this.sendNotificationMessage("霸王茶姬");
   }
 }
 

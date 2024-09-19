@@ -5,13 +5,14 @@
  * 近期修订历史
  * 2024-09-18 first release
  *
- * cron: 0 0 6,12,18 * * *
+ * cron: 0 0 7,14,21 * * *
  * const $ = new Env('星芽短剧');
  */
 
-const axios = require("axios");
-const { randomInt } = require("crypto");
-const configManager = require("../config/configManager");
+import { randomInt } from "crypto"
+import { request } from "../utils/request";
+import configManager from "../config/configManager"
+import { convertConfig } from "../utils/tools";
 
 interface Task {
   code: string;
@@ -61,15 +62,15 @@ class XingYaShortPlay {
     };
   }
 
-  private async request(url: string, method: "GET" | "POST", data?: any) {
+  private async requestWithHeader(url: string, method: "GET" | "POST", data?: any) {
     try {
-      const response = await axios({
+      const response = await request<any>(
         url,
+        this.headers,
         method,
-        headers: this.headers,
         data,
-      });
-      return response.data;
+      );
+      return response;
     } catch (error) {
       console.error(`Request failed: ${error}`);
       return null;
@@ -78,7 +79,7 @@ class XingYaShortPlay {
 
   async login() {
     const url = "https://app.whjzjx.cn/v1/account/detail";
-    const data = await this.request(url, "GET");
+    const data = await this.requestWithHeader(url, "GET");
     if (data?.msg === "成功") {
       console.log(`开始【星芽免费短剧账号】${data.data.nickname}`);
       console.log(`💰目前金币数量: ${data.data.species}`);
@@ -90,7 +91,7 @@ class XingYaShortPlay {
 
   async signIn() {
     const url = "https://speciesweb.whjzjx.cn/v1/sign/do";
-    const data = await this.request(url, "POST");
+    const data = await this.requestWithHeader(url, "POST");
     console.log("📅开始签到");
     if (data?.msg === "success") {
       console.log(`✅签到成功获取金币: ${data.data.coin_val}`);
@@ -102,7 +103,7 @@ class XingYaShortPlay {
 
   async watchSignInAd() {
     const url = "https://speciesweb.whjzjx.cn/v1/task_ad/claim";
-    const data = await this.request(url, "POST", { ad_type: 4 });
+    const data = await this.requestWithHeader(url, "POST", { ad_type: 4 });
     if (data?.code === "ok") {
       console.log(`💱看签到广告成功获取金币: ${data.data.coin_val}`);
     } else {
@@ -112,7 +113,7 @@ class XingYaShortPlay {
 
   async watchAd() {
     const url = "https://speciesweb.whjzjx.cn/v1/sign";
-    const data = await this.request(url, "POST", { type: 4, mark: 2 });
+    const data = await this.requestWithHeader(url, "POST", { type: 4, mark: 2 });
     if (data?.msg === "签到成功") {
       console.log(`💱看广告成功获取金币: ${data.data.species}`);
     } else {
@@ -122,7 +123,7 @@ class XingYaShortPlay {
 
   async watchAdAgain() {
     const url = "https://speciesweb.whjzjx.cn/v1/task_ad/claim";
-    const data = await this.request(url, "POST", { ad_type: 2 });
+    const data = await this.requestWithHeader(url, "POST", { ad_type: 2 });
     if (data?.code === "ok") {
       console.log(`💱再看广告成功获取金币: ${data.data.coin_val}`);
     } else {
@@ -133,7 +134,7 @@ class XingYaShortPlay {
   async collect() {
     const url = "https://app.whjzjx.cn/v1/theater/doing_look_v2";
     const sjs = randomInt(1, 2000);
-    const data = await this.request(url, "POST", {
+    const data = await this.requestWithHeader(url, "POST", {
       kind: 2,
       target_id: sjs,
       category: 1,
@@ -149,7 +150,7 @@ class XingYaShortPlay {
   async like() {
     const url = "https://speciesweb.whjzjx.cn/v1/task/like";
     const sjs = randomInt(1, 116161);
-    const data = await this.request(url, "POST", { theater_id: sjs });
+    const data = await this.requestWithHeader(url, "POST", { theater_id: sjs });
     if (data?.msg === "success") {
       console.log(`💱点赞成功获取金币: ${data.data.info.coin_val}`);
     } else {
@@ -161,7 +162,7 @@ class XingYaShortPlay {
     console.log("🆙观看加时长运行");
     const url = "https://speciesweb.whjzjx.cn/v1/sign/escalation";
     for (let i = 0; i < 10; i++) {
-      const data = await this.request(url, "POST", { type: 3 });
+      const data = await this.requestWithHeader(url, "POST", { type: 3 });
       if (data?.msg === "上报成功") {
         console.log("📈增加时长成功");
       } else {
@@ -175,7 +176,7 @@ class XingYaShortPlay {
 
   async claimWatchTimeReward() {
     const url = "https://speciesweb.whjzjx.cn/v1/sign/sign_multi_stage";
-    const data = await this.request(url, "POST", {
+    const data = await this.requestWithHeader(url, "POST", {
       type: 3,
       makes: [1, 2, 3, 4, 5, 6, 7],
       device_id: "87387123-7A4D-4B6A-912A-30CABD9CD4B3",
@@ -190,7 +191,7 @@ class XingYaShortPlay {
   async watchBoxAd(adNum: number) {
     const url = "https://speciesweb.whjzjx.cn/v1/box/view_ad";
     console.log(`📺观看宝箱广告${adNum}`);
-    const data = await this.request(url, "POST", {
+    const data = await this.requestWithHeader(url, "POST", {
       config_id: 3,
       coin_val: 72,
       ad_num: adNum,
@@ -206,7 +207,7 @@ class XingYaShortPlay {
     console.log("🆙观看加时长运行");
     const url = "https://speciesweb.whjzjx.cn/v1/box/open";
     for (let i = 0; i < 10; i++) {
-      const data = await this.request(url, "POST", { config_id: 3 });
+      const data = await this.requestWithHeader(url, "POST", { config_id: 3 });
       if (data?.msg === "success") {
         console.log(`🗳️开宝箱成功获得金币: ${data.data.coin_val}`);
         await this.watchBoxAd(2);
@@ -234,7 +235,7 @@ class XingYaShortPlay {
   private async checkTasks() {
     console.log("📊查看任务列表");
     const url = `https://speciesweb.whjzjx.cn/v1/task/list?device_id=${this.config.device_id}`;
-    const data = await this.request(url, "GET");
+    const data = await this.requestWithHeader(url, "GET");
     if (!data) return;
 
     const tasks: Task[] = data.data.task_list.map((task: any) => ({
@@ -307,15 +308,7 @@ async function runMultipleAccounts(configs: UserConfig[]) {
   }
 }
 
-const configs: UserConfig[] = Object.entries(
-  (configManager.get("videos.xydj") as Record<string, Partial<UserConfig>>) ??
-    []
-).map(([name, config]) => {
-  return {
-    name: name,
-    authorization: config.authorization,
-    device_id: config.device_id,
-  } as UserConfig;
-});
+
+const configs = convertConfig<UserConfig>(configManager.get("xydj"));
 
 runMultipleAccounts(configs).catch(console.error);

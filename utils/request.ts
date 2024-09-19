@@ -1,9 +1,11 @@
-async function request<T>(
+import axios from "axios";
+
+export async function request<T>(
   url: string,
   headers: any,
   method: "GET" | "POST",
   data?: any
-): Promise<T> {
+): Promise<T|null> {
   try {
     const response = await axios({
       url,
@@ -18,6 +20,4 @@ async function request<T>(
   }
 }
 
-module.exports = {
-  request,
-};
+ 

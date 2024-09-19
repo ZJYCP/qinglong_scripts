@@ -65,5 +65,6 @@ class ConfigManager {
 
 // 导出单例
 const configManagerInstance = ConfigManager.getInstance("config.yaml");
-module.exports = configManagerInstance;
+
+export default configManagerInstance
 
