@@ -9,9 +9,9 @@
  * const $ = new Env('星芽短剧');
  */
 
-import { randomInt } from "crypto"
+import { randomInt } from "crypto";
 import { request } from "../utils/request";
-import configManager from "../config/configManager"
+import configManager from "../config/configManager";
 import { convertConfig } from "../utils/tools";
 
 interface Task {
@@ -26,9 +26,20 @@ interface UserConfig {
   device_id: string;
 }
 
+interface Account{
+  earn_today: number
+  current_coin: number
+  current_cash: number
+}
+
 class XingYaShortPlay {
   private headers: any;
   private config: UserConfig;
+  public account:Account = {
+    earn_today: 0,
+    current_coin: 0,
+    current_cash: 0,
+  };
 
   constructor(config: UserConfig) {
     this.config = config;
@@ -62,14 +73,17 @@ class XingYaShortPlay {
     };
   }
 
-  private async requestWithHeader(url: string, method: "GET" | "POST", data?: any) {
+  private coin_earn(coin: number) {
+    this.account.earn_today += coin;
+  }
+
+  private async requestWithHeader(
+    url: string,
+    method: "GET" | "POST",
+    data?: any
+  ) {
     try {
-      const response = await request<any>(
-        url,
-        this.headers,
-        method,
-        data,
-      );
+      const response = await request<any>(url, this.headers, method, data);
       return response;
     } catch (error) {
       console.error(`Request failed: ${error}`);
@@ -84,6 +98,8 @@ class XingYaShortPlay {
       console.log(`开始【星芽免费短剧账号】${data.data.nickname}`);
       console.log(`💰目前金币数量: ${data.data.species}`);
       console.log(`💰可提现: ${data.data.cash_remain}`);
+      this.account.current_cash = data.data.cash_remain;
+      this.account.current_coin = data.data.species;
     } else {
       console.log("登录失败，请重新获取Authorization");
     }
@@ -95,6 +111,7 @@ class XingYaShortPlay {
     console.log("📅开始签到");
     if (data?.msg === "success") {
       console.log(`✅签到成功获取金币: ${data.data.coin_val}`);
+      this.coin_earn(data.data.coin_val);
       await this.watchSignInAd();
     } else {
       console.log(`❌签到失败原因: ${data?.msg}`);
@@ -106,6 +123,7 @@ class XingYaShortPlay {
     const data = await this.requestWithHeader(url, "POST", { ad_type: 4 });
     if (data?.code === "ok") {
       console.log(`💱看签到广告成功获取金币: ${data.data.coin_val}`);
+      this.coin_earn(data.data.coin_val);
     } else {
       console.log(`❌再看广告失败，原因: ${data?.msg}`);
     }
@@ -113,9 +131,13 @@ class XingYaShortPlay {
 
   async watchAd() {
     const url = "https://speciesweb.whjzjx.cn/v1/sign";
-    const data = await this.requestWithHeader(url, "POST", { type: 4, mark: 2 });
+    const data = await this.requestWithHeader(url, "POST", {
+      type: 4,
+      mark: 2,
+    });
     if (data?.msg === "签到成功") {
       console.log(`💱看广告成功获取金币: ${data.data.species}`);
+      this.coin_earn(data.data.species);
     } else {
       console.log(`❌看广告失败原因: ${data?.msg}`);
     }
@@ -126,6 +148,7 @@ class XingYaShortPlay {
     const data = await this.requestWithHeader(url, "POST", { ad_type: 2 });
     if (data?.code === "ok") {
       console.log(`💱再看广告成功获取金币: ${data.data.coin_val}`);
+      this.coin_earn(data.data.coin_val);
     } else {
       console.log(`❌再看广告失败，原因: ${data?.msg}`);
     }
@@ -153,6 +176,7 @@ class XingYaShortPlay {
     const data = await this.requestWithHeader(url, "POST", { theater_id: sjs });
     if (data?.msg === "success") {
       console.log(`💱点赞成功获取金币: ${data.data.info.coin_val}`);
+      this.coin_earn(data.data.info.coin_val);
     } else {
       console.log(`❌点赞失败，原因: ${data?.msg}`);
     }
@@ -183,6 +207,7 @@ class XingYaShortPlay {
     });
     if (data?.msg === "签到成功") {
       console.log(`💱领取观看时长金币成功: ${data.data.coin_value}`);
+      this.coin_earn(data.data.coin_value);
     } else {
       console.log(`❌领取观看时长金币失败，原因: ${data?.msg}`);
     }
@@ -198,6 +223,7 @@ class XingYaShortPlay {
     });
     if (data?.msg === "success") {
       console.log(`💰宝箱广告观看成功获得金币: ${data.data.coin_val}`);
+      this.coin_earn(data.data.coin_val);
     } else {
       console.log(`❌开宝箱失败，原因: ${data?.msg}`);
     }
@@ -210,6 +236,7 @@ class XingYaShortPlay {
       const data = await this.requestWithHeader(url, "POST", { config_id: 3 });
       if (data?.msg === "success") {
         console.log(`🗳️开宝箱成功获得金币: ${data.data.coin_val}`);
+        this.coin_earn(data.data.coin_val);
         await this.watchBoxAd(2);
         await this.watchBoxAd(1);
       } else {
@@ -295,19 +322,33 @@ class XingYaShortPlay {
   }
 }
 
+async function sendNotificationMessage(title: string, info: Map<string, Account>): Promise<void> {
+  const content = Object.entries(info).map(([key,value])=>{
+    return `账号 ${key}：\n 本次获取金币 ${value.earn_today}, 当前金币数量为 ${value.current_coin + value.earn_today}, 当前可提现 ${value.current_cash}。`
+  }).join("\n")
+  try {
+    const { sendMessage } = await import("../utils/tools");
+    await sendMessage(title, content);
+  } catch (error) {
+    console.error("发送通知消息失败！", error);
+  }
+}
+
 async function runMultipleAccounts(configs: UserConfig[]) {
+  const all_count_message = new Map<string, Account>()
   for (let i = 0; i < configs.length; i++) {
     console.log(`\n开始执行账号 ${configs[i].name}`);
     const xingYa = new XingYaShortPlay(configs[i]);
     await xingYa.run();
+    all_count_message.set(configs[i].name, xingYa.account)
     console.log(`账号 ${configs[i].name} 执行完毕\n`);
     // 在账号之间添加一些延迟，避免请求过于频繁
     if (i < configs.length - 1) {
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   }
+  sendNotificationMessage("星芽短剧", all_count_message)
 }
-
 
 const configs = convertConfig<UserConfig>(configManager.get("xydj"));
 
