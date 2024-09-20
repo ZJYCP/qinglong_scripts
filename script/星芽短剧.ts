@@ -12,7 +12,7 @@
 import { randomInt } from "crypto";
 import { request } from "../utils/request";
 import configManager from "../config/configManager";
-import { convertConfig } from "../utils/tools";
+import { convertConfig, stringToNumber } from "../utils/tools";
 
 interface Task {
   code: string;
@@ -73,8 +73,8 @@ class XingYaShortPlay {
     };
   }
 
-  private coin_earn(coin: number) {
-    this.account.earn_today += coin;
+  private coin_earn(coin: number|string) {
+    this.account.earn_today += Number(coin);
   }
 
   private async requestWithHeader(
@@ -99,7 +99,7 @@ class XingYaShortPlay {
       console.log(`💰目前金币数量: ${data.data.species}`);
       console.log(`💰可提现: ${data.data.cash_remain}`);
       this.account.current_cash = data.data.cash_remain;
-      this.account.current_coin = data.data.species;
+      this.account.current_coin = stringToNumber(data.data.species);
     } else {
       console.log("登录失败，请重新获取Authorization");
     }
@@ -323,9 +323,10 @@ class XingYaShortPlay {
 }
 
 async function sendNotificationMessage(title: string, info: Map<string, Account>): Promise<void> {
-  const content = Object.entries(info).map(([key,value])=>{
-    return `账号 ${key}：\n 本次获取金币 ${value.earn_today}, 当前金币数量为 ${value.current_coin + value.earn_today}, 当前可提现 ${value.current_cash}。`
+  const content = [...info].map(([key,value])=>{
+    return `账号 ${key}：\n 本次获取金币 ${value.earn_today}, 当前金币数量为 ${Number(value.current_coin) + Number(value.earn_today)}, 当前可提现 ${value.current_cash}。\n`
   }).join("\n")
+  console.log(content)
   try {
     const { sendMessage } = await import("../utils/tools");
     await sendMessage(title, content);
