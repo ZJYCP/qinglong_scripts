@@ -169,7 +169,7 @@ async function outputCookies(page) {
 
 (async () => {
   const { browser, page } = await connect({
-    headless: isServer ? 'new' : false,
+    headless: false,
     ignoreAllFlags: true,
     args: [
       '--no-sandbox',
@@ -178,6 +178,7 @@ async function outputCookies(page) {
       '--disable-gpu',
       '--no-first-run',
       '--disable-background-networking',
+      '--disable-features=AutomationControlled',
     ],
     customConfig: {
       userDataDir: USER_DATA_DIR,
